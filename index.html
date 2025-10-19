@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8">
+<title>Agricultural Advisory System</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #e6ffe6;
+    background-image: url('background.jpg'); /* Weka path ya background yako */
+    background-size: cover;
+    background-position: right;
+  }
+  header {
+    text-align: center;
+    padding: 20px;
+    background-color: rgba(0,128,0,0.2);
+  }
+  header h1 {
+    font-weight: bold;
+    font-size: 2em;
+    margin: 0;
+  }
+  #translatorLine {
+    text-align: right;
+    margin-top: 5px;
+    cursor: pointer;
+    color: blue;
+    text-decoration: underline;
+  }
+  .container {
+    max-width: 900px;
+    margin: 20px auto;
+    background: rgba(255,255,255,0.9);
+    padding: 30px;
+    border-radius: 10px;
+    display: flex;
+    gap: 20px;
+  }
+  .form-section {
+    flex: 2;
+  }
+  .profile-section {
+    flex: 1;
+    text-align: center;
+  }
+  .profile-section img {
+    width: 150px;
+    border-radius: 50%;
+  }
+  .profile-section h2, .profile-section h3 {
+    margin: 10px 0;
+  }
+  label {
+    display: block;
+    margin: 10px 0 5px;
+  }
+  select, input, button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  button {
+    background-color: #28a745;
+    color: white;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #218838;
+  }
+  .result {
+    font-weight: bold;
+    font-size: 1.2em;
+    color: #006400;
+    background: #e6ffe6;
+    padding: 15px;
+    border-radius: 5px;
+    text-align: center;
+  }
+  canvas {
+    background: #fff;
+    margin-top: 20px;
+    border-radius: 10px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="title">Agricultural Advisory System</h1>
+  <div id="translatorLine" onclick="toggleLanguage()">🌍 Translate Website</div>
+</header>
+
+<div class="container">
+  <div class="form-section">
+    <label for="name" id="lblName">Jina:</label>
+    <input type="text" id="name" placeholder="Andika jina lako">
+
+    <label for="gender" id="lblGender">Jinsia:</label>
+    <select id="gender">
+      <option value="">-- Chagua --</option>
+      <option value="mwanaume">Mwanaume</option>
+      <option value="mwanamke">Mwanamke</option>
+    </select>
+
+    <label for="birthYear" id="lblYear">Mwaka wa Kuzaliwa:</label>
+    <input type="number" id="birthYear" placeholder="Mfano: 1995">
+
+    <label for="region" id="lblRegion">Chagua Mkoa:</label>
+    <select id="region">
+      <option value="">-- Chagua Mkoa --</option>
+      <option value="morogoro">Morogoro</option>
+      <option value="dodoma">Dodoma</option>
+      <option value="dar">Dar es Salaam</option>
+    </select>
+
+     <label for="crop">Chagua zao:</label>
+  <select id="crop">
+    <option value="">--Chagua--</option>
+    <option value="mahindi">🌽 Mahindi</option>
+    <option value="mpunga">🌾 Mpunga</option>
+    <option value="mihogo">🌿 Mihogo</option>
+    <option value="maharage">🌱 Maharage</option>
+  </select>
+
+
+
+    <button onclick="showAdvice()" id="btnAdvice">Show Advice</button>
+    <div class="result" id="adviceResult"></div>
+
+    <canvas id="myChart" width="400" height="200"></canvas>
+  </div>
+
+  <div class="profile-section">
+    <img src="profile.jpg" alt="Profile">
+    <h2 id="profileName">Taisoni Ambokile Mwaluswaswa</h2>
+    <h3 id="subtitle">GIS & Remote Sensing Expert, Ardhi University</h3>
+  </div>
+</div>
+
+<script>
+let lang = 'sw'; // default Kiswahili
+
+const dataDemo = {
+  rainfall: [120, 80, 95, 110, 130, 140, 160, 150, 100, 90, 85, 70],
+  temperature: [25, 26, 27, 28, 29, 30, 31, 30, 29, 28, 27, 26],
+  ndvi: [0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.72, 0.68, 0.60, 0.55, 0.50, 0.48]
+};
+
+const cropRequirements = {
+  mahindi: {rainfall: [100, 180], temperature: [20, 30]},
+  mpunga: {rainfall: [150, 250], temperature: [25, 35]},
+  maharage: {rainfall: [80, 150], temperature: [18, 28]},
+  mihogo: {rainfall: [50, 120], temperature: [22, 35]}
+};
+
+function showAdvice() {
+  const crop = document.getElementById("crop").value;
+  const result = document.getElementById("adviceResult");
+  const months = ["Januari","Februari","Machi","Aprili","Mei","Juni","Julai","Agosti","Septemba","Oktoba","Novemba","Desemba"];
+
+  if(!crop) {
+    result.innerHTML = lang === 'sw' ? "⚠️ Tafadhali chagua zao kwanza." : "⚠️ Please select a crop first.";
+    return;
+  }
+
+  const rainAvg = dataDemo.rainfall.reduce((a,b)=>a+b,0)/dataDemo.rainfall.length;
+  const bestMonthIndex = dataDemo.rainfall.indexOf(Math.max(...dataDemo.rainfall));
+
+  result.innerHTML = lang === 'sw' ? 
+    `✅ Kwa zao la <b>${crop}</b>:<br>🌧️ Mvua wastani: <b>${rainAvg.toFixed(1)} mm</b><br>🌡️ Joto wastani: <b>${dataDemo.temperature[bestMonthIndex]} °C</b><br>🗓️ Mwezi bora wa kupanda: <b>${months[bestMonthIndex]}</b>` 
+    : 
+    `✅ For <b>${crop}</b>:<br>🌧️ Avg Rainfall: <b>${rainAvg.toFixed(1)} mm</b><br>🌡️ Avg Temperature: <b>${dataDemo.temperature[bestMonthIndex]} °C</b><br>🗓️ Best Planting Month: <b>${months[bestMonthIndex]}</b>`;
+
+  renderChart();
+}
+
+function renderChart() {
+  const ctx = document.getElementById('myChart').getContext('2d');
+  if(window.myChart) window.myChart.destroy(); // destroy previous chart
+  window.myChart = new Chart(ctx, {
+    type: 'line', // you can change to 'bar' or 'pie'
+    data: {
+      labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+      datasets: [
+        {label:'Rainfall (mm)', data: dataDemo.rainfall, borderColor:'blue', fill:false},
+        {label:'Temperature (°C)', data: dataDemo.temperature, borderColor:'red', fill:false},
+        {label:'NDVI', data: dataDemo.ndvi, borderColor:'green', fill:false}
+      ]
+    },
+    options: {
+      responsive:true,
+      plugins:{legend:{position:'top'}}
+    }
+  });
+}
+
+function toggleLanguage(){
+  if(lang==='sw'){
+    lang='en';
+    document.getElementById("title").innerText = "Agricultural Advisory System";
+    document.getElementById("lblName").innerText = "Name:";
+    document.getElementById("lblGender").innerText = "Gender:";
+    document.getElementById("lblYear").innerText = "Birth Year:";
+    document.getElementById("lblRegion").innerText = "Select Region:";
+    document.getElementById("lblCrop").innerText = "Select Crop:";
+    document.getElementById("btnAdvice").innerText = "Show Advice";
+  } else {
+    lang='sw';
+    document.getElementById("title").innerText = "Mfumo wa Ushauri wa Kilimo";
+    document.getElementById("lblName").innerText = "Jina:";
+    document.getElementById("lblGender").innerText = "Jinsia:";
+    document.getElementById("lblYear").innerText = "Mwaka wa Kuzaliwa:";
+    document.getElementById("lblRegion").innerText = "Chagua Mkoa:";
+    document.getElementById("lblCrop").innerText = "Chagua Zao:";
+    document.getElementById("btnAdvice").innerText = "Onyesha Ushauri";
+  }
+}
+</script>
+
+</body>
+</html>
