@@ -1,227 +1,452 @@
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Agricultural Advisory System</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #e6ffe6;
-    background-image: url('background.jpg'); /* Weka path ya background yako */
+  :root{
+    --green:#2e8b57;
+    --green-dark:#246b45;
+  }
+  body{
+    font-family: 'Poppins', sans-serif;
+    margin:0; padding:0;
+    background: rgba(200,255,200,0.25);
+    background-image: url('background.jpg');
     background-size: cover;
-    background-position: right;
+    background-position:center;
   }
-  header {
-    text-align: center;
-    padding: 20px;
-    background-color: rgba(0,128,0,0.2);
+  header{
+    text-align:center;
+    background:var(--green);
+    color:#fff;
+    padding:18px 10px;
+    font-size:26px;
+    font-weight:700;
+    position:relative;
   }
-  header h1 {
-    font-weight: bold;
-    font-size: 2em;
-    margin: 0;
+  .container{
+    max-width:1100px;
+    margin:28px auto;
+    background:#ffffffe6;
+    padding:22px;
+    border-radius:14px;
+    box-shadow:0 6px 30px rgba(0,0,0,0.15);
   }
-  #translatorLine {
-    text-align: right;
-    margin-top: 5px;
-    cursor: pointer;
-    color: blue;
-    text-decoration: underline;
+  .profile{
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:14px;
   }
-  .container {
-    max-width: 900px;
-    margin: 20px auto;
-    background: rgba(255,255,255,0.9);
-    padding: 30px;
-    border-radius: 10px;
-    display: flex;
-    gap: 20px;
+  .profile img{
+    width:84px; height:84px;
+    border-radius:50%;
+    object-fit:cover;
+    border:3px solid var(--green);
   }
-  .form-section {
-    flex: 2;
+  .profile .subtitle{
+    text-align:right;
+    font-size:13px;
+    color:#333;
+    line-height:1.1;
+    white-space:pre-line; /* keeps line breaks */
   }
-  .profile-section {
-    flex: 1;
-    text-align: center;
+  form .row{ display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
+  .left, .right { flex:1 1 320px; min-width:280px; }
+  label{ display:block; margin-top:8px; font-weight:600; color:#222; }
+  input, select, button { width:100%; padding:10px; margin-top:6px; border-radius:8px; border:1px solid #ccc; font-size:15px; }
+  button{ background:var(--green); color:#fff; cursor:pointer; }
+  button:hover{ background:var(--green-dark); }
+  #adviceResult{ margin-top:16px; padding:14px; border-radius:10px; background:#eafbea; font-weight:600; color:#0b3; white-space:pre-line; }
+  canvas{ margin-top:20px; width:100% !important; height:400px !important; }
+  .crop-thumbs{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .thumb{
+    width:90px; height:70px; border-radius:8px; overflow:hidden; border:2px solid transparent; cursor:pointer; text-align:center;
+    display:flex; align-items:center; justify-content:center; background:#fff;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
   }
-  .profile-section img {
-    width: 150px;
-    border-radius: 50%;
-  }
-  .profile-section h2, .profile-section h3 {
-    margin: 10px 0;
-  }
-  label {
-    display: block;
-    margin: 10px 0 5px;
-  }
-  select, input, button {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-  }
-  button {
-    background-color: #28a745;
-    color: white;
-    cursor: pointer;
-  }
-  button:hover {
-    background-color: #218838;
-  }
-  .result {
-    font-weight: bold;
-    font-size: 1.2em;
-    color: #006400;
-    background: #e6ffe6;
-    padding: 15px;
-    border-radius: 5px;
-    text-align: center;
-  }
-  canvas {
-    background: #fff;
-    margin-top: 20px;
-    border-radius: 10px;
-  }
+  .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb.selected{ border-color:var(--green); box-shadow:0 4px 14px rgba(46,139,87,0.15); }
+  .lang-area{ text-align:center; margin-top:8px; }
+  .meta-small{ font-size:13px; color:#555; margin-top:6px; }
+  @media (max-width:720px){ .left, .right { min-width:100%; } .crop-thumbs{ justify-content:flex-start; } }
 </style>
 </head>
 <body>
-
-<header>
-  <h1 id="title">Agricultural Advisory System</h1>
-  <div id="translatorLine" onclick="toggleLanguage()">🌍 Translate Website</div>
+<header id="siteHeader">
+  Agricultural Advisory System
+  <div class="lang-area">
+    <button id="langToggle">🌐 Switch Language / Badilisha Lugha</button>
+  </div>
 </header>
 
 <div class="container">
-  <div class="form-section">
-    <label for="name" id="lblName">Jina:</label>
-    <input type="text" id="name" placeholder="Andika jina lako">
-
-    <label for="gender" id="lblGender">Jinsia:</label>
-    <select id="gender">
-      <option value="">-- Chagua --</option>
-      <option value="mwanaume">Mwanaume</option>
-      <option value="mwanamke">Mwanamke</option>
-    </select>
-
-    <label for="birthYear" id="lblYear">Mwaka wa Kuzaliwa:</label>
-    <input type="number" id="birthYear" placeholder="Mfano: 1995">
-
-    <label for="region" id="lblRegion">Chagua Mkoa:</label>
-    <select id="region">
-      <option value="">-- Chagua Mkoa --</option>
-      <option value="morogoro">Morogoro</option>
-      <option value="dodoma">Dodoma</option>
-      <option value="dar">Dar es Salaam</option>
-    </select>
-
-     <label for="crop">Chagua zao:</label>
-  <select id="crop">
-    <option value="">--Chagua--</option>
-    <option value="mahindi">🌽 Mahindi</option>
-    <option value="mpunga">🌾 Mpunga</option>
-    <option value="mihogo">🌿 Mihogo</option>
-    <option value="maharage">🌱 Maharage</option>
-  </select>
-
-
-
-    <button onclick="showAdvice()" id="btnAdvice">Show Advice</button>
-    <div class="result" id="adviceResult"></div>
-
-    <canvas id="myChart" width="400" height="200"></canvas>
+  <div class="profile">
+    <div>
+      <img id="profileImg" src="profile.jpg" alt="Profile">
+    </div>
+    <div class="subtitle">
+Created by
+Taisoni Ambokile Mwaluswaswa
+GIS and RS Expert
+    </div>
   </div>
 
-  <div class="profile-section">
-    <img src="profile.jpg" alt="Profile">
-    <h2 id="profileName">Taisoni Ambokile Mwaluswaswa</h2>
-    <h3 id="subtitle">GIS & Remote Sensing Expert, Ardhi University</h3>
-  </div>
+  <form id="mainForm" onsubmit="return false;">
+    <div class="row">
+      <div class="left">
+        <label id="lblName">Full Name:</label>
+        <input id="farmerName" type="text" placeholder="Enter your name" oninput="playSound()" />
+
+        <label id="lblGender">Gender:</label>
+        <select id="gender" onchange="playSound()">
+          <option value="">Select Gender</option>
+          <option value="male">🧑🏾‍💼 Male</option>
+          <option value="female">🧕🏾 Female</option>
+        </select>
+
+        <label id="lblBirth">Year of Birth:</label>
+        <input id="birthYear" type="number" placeholder="e.g. 1990" oninput="playSound()" />
+
+        <label id="lblRegion">Region:</label>
+        <select id="region" onchange="playSound()">
+          <option value="">Select Region</option>
+          <option>Songwe</option>
+          <option>Mbeya</option>
+          <option>Iringa</option>
+        </select>
+
+        <label id="lblCrop">Crop:</label>
+        <select id="cropSelect" onchange="onCropSelectChange()" >
+          <option value="">Select Crop</option>
+          <!-- options will be populated by JS -->
+        </select>
+
+        <!-- thumbnails -->
+        <div class="crop-thumbs" id="cropThumbs" aria-hidden="false"></div>
+
+        <div class="meta-small">Tip: you may click thumbnail to choose crop.</div>
+
+        <label id="lblChartType">Chart Type:</label>
+        <select id="chartType" onchange="playSound()">
+          <option value="line">Line (monthly)</option>
+          <option value="bar">Bar</option>
+        </select>
+
+        <div style="display:flex; gap:10px; margin-top:12px;">
+          <button type="button" onclick="showTrend()">Show Trend</button>
+          <button type="button" onclick="showAdvice()">Show Advice</button>
+        </div>
+
+        <div id="adviceResult" aria-live="polite"></div>
+      </div>
+
+      <div class="right">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+  </form>
 </div>
 
 <script>
-let lang = 'sw'; // default Kiswahili
+/* ------------------------------
+  Configuration / crop list
+   - You will upload your images into /images/
+   - Images filenames should match the keys below (lowercase)
+-------------------------------*/
+const monthsNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const startYear = 2016;
+const endYear = 2025; // inclusive -> 10 years
+const totalMonths = (endYear - startYear + 1) * 12; // 120
 
-const dataDemo = {
-  rainfall: [120, 80, 95, 110, 130, 140, 160, 150, 100, 90, 85, 70],
-  temperature: [25, 26, 27, 28, 29, 30, 31, 30, 29, 28, 27, 26],
-  ndvi: [0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.72, 0.68, 0.60, 0.55, 0.50, 0.48]
+const crops = [
+  "Mahindi","Mpunga","Chai","Kahawa","Maharage","Mtama","Alizeti","Ufuta"
+];
+
+// placeholder mapping to image file under images/<key>.jpg
+// user will upload images with these names (lowercase, no spaces)
+const cropImageFilenames = {
+  Mahindi: "mahindi.jpg",
+  Mpunga: "mpunga.jpg",
+  Chai: "chai.jpg",
+  Kahawa: "kahawa.jpg",
+  Maharage: "maharage.jpg",
+  Mtama: "mtama.jpg",
+  Alizeti: "alizeti.jpg",
+  Ufuta: "ufuta.jpg"
 };
 
-const cropRequirements = {
-  mahindi: {rainfall: [100, 180], temperature: [20, 30]},
-  mpunga: {rainfall: [150, 250], temperature: [25, 35]},
-  maharage: {rainfall: [80, 150], temperature: [18, 28]},
-  mihogo: {rainfall: [50, 120], temperature: [22, 35]}
-};
+/* ------------------------------
+  Utility: generate labels for 120 months
+-------------------------------*/
+function buildMonthlyLabels(){
+  const labels = [];
+  for(let y=startYear; y<=endYear; y++){
+    for(let m=0; m<12; m++){
+      labels.push(`${y} ${monthsNames[m]}`);
+    }
+  }
+  return labels;
+}
+const monthlyLabels = buildMonthlyLabels();
 
-function showAdvice() {
-  const crop = document.getElementById("crop").value;
-  const result = document.getElementById("adviceResult");
-  const months = ["Januari","Februari","Machi","Aprili","Mei","Juni","Julai","Agosti","Septemba","Oktoba","Novemba","Desemba"];
+/* ------------------------------
+  Generate demo monthly data per crop (rainfall mm, temp C, ndvi)
+  - Each array length = totalMonths (120)
+  - Patterns differ per crop to be realistic-ish
+-------------------------------*/
+function randRange(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function randFloat(min,max,dec=2){ return +(Math.random()*(max-min)+min).toFixed(dec); }
 
-  if(!crop) {
-    result.innerHTML = lang === 'sw' ? "⚠️ Tafadhali chagua zao kwanza." : "⚠️ Please select a crop first.";
-    return;
+const cropData = {};
+crops.forEach(c => {
+  // basic seasonal pattern helper: monthly sinusoidal variation + random noise
+  const rainfall = [];
+  const temperature = [];
+  const ndvi = [];
+  for(let i=0;i<totalMonths;i++){
+    const monthIndex = i % 12;
+    // base values per crop
+    let baseRain, baseTemp, baseNDVI;
+    switch(c){
+      case "Mahindi": baseRain=90; baseTemp=22; baseNDVI=0.45; break;
+      case "Mpunga": baseRain=160; baseTemp=27; baseNDVI=0.6; break;
+      case "Chai": baseRain=140; baseTemp=19; baseNDVI=0.7; break;
+      case "Kahawa": baseRain=130; baseTemp=21; baseNDVI=0.6; break;
+      case "Maharage": baseRain=110; baseTemp=24; baseNDVI=0.5; break;
+      case "Mtama": baseRain=80; baseTemp=26; baseNDVI=0.35; break;
+      case "Alizeti": baseRain=70; baseTemp=25; baseNDVI=0.4; break;
+      case "Ufuta": baseRain=85; baseTemp=23; baseNDVI=0.44; break;
+      default: baseRain=100; baseTemp=22; baseNDVI=0.5;
+    }
+    // seasonal multiplier: wet months roughly Apr-Jun and Nov-Feb (example)
+    // create a smooth seasonal pattern with sine function: peaks mid-year roughly
+    const seasonFactor = 1 + 0.5 * Math.sin((monthIndex/12)*2*Math.PI + (c.length % 3));
+    const noiseRain = randRange(-20,20);
+    const rainVal = Math.max(0, Math.round(baseRain * seasonFactor + noiseRain));
+    rainfall.push(rainVal);
+
+    const tempNoise = randRange(-2,2);
+    const tempVal = +(baseTemp + (Math.cos((monthIndex/12)*2*Math.PI)*2) + tempNoise).toFixed(1);
+    temperature.push(tempVal);
+
+    const ndviNoise = randFloat(-0.08,0.08,2);
+    const ndviVal = Math.max(0, +(baseNDVI + (Math.sin((monthIndex/12)*2*Math.PI)*0.05) + ndviNoise).toFixed(2));
+    ndvi.push(ndviVal);
   }
 
-  const rainAvg = dataDemo.rainfall.reduce((a,b)=>a+b,0)/dataDemo.rainfall.length;
-  const bestMonthIndex = dataDemo.rainfall.indexOf(Math.max(...dataDemo.rainfall));
+  // crop requirement text
+  let req;
+  switch(c){
+    case "Mahindi": req="Needs about 500–800 mm rainfall/year and 18–27°C."; break;
+    case "Mpunga": req="Requires 1000–2000 mm rainfall/year and warm temps (>25°C)."; break;
+    case "Chai": req="Prefers 1200–2500 mm/year and 16–25°C."; break;
+    case "Kahawa": req="Needs 1000–2000 mm/year and 18–26°C."; break;
+    case "Maharage": req="Moderate rainfall 600–1200 mm and 18–28°C."; break;
+    case "Mtama": req="Drought tolerant; 400–700 mm and high temps 24–30°C."; break;
+    case "Alizeti": req="Prefers 600–1000 mm and 20–28°C."; break;
+    case "Ufuta": req="Requires 600–900 mm and 18–26°C."; break;
+    default: req="";
+  }
 
-  result.innerHTML = lang === 'sw' ? 
-    `✅ Kwa zao la <b>${crop}</b>:<br>🌧️ Mvua wastani: <b>${rainAvg.toFixed(1)} mm</b><br>🌡️ Joto wastani: <b>${dataDemo.temperature[bestMonthIndex]} °C</b><br>🗓️ Mwezi bora wa kupanda: <b>${months[bestMonthIndex]}</b>` 
-    : 
-    `✅ For <b>${crop}</b>:<br>🌧️ Avg Rainfall: <b>${rainAvg.toFixed(1)} mm</b><br>🌡️ Avg Temperature: <b>${dataDemo.temperature[bestMonthIndex]} °C</b><br>🗓️ Best Planting Month: <b>${months[bestMonthIndex]}</b>`;
+  cropData[c] = {
+    rainfall, temperature, ndvi, requirements: req
+  };
+});
 
-  renderChart();
+/* ------------------------------
+  Populate crop select and thumbnails
+-------------------------------*/
+const cropSelect = document.getElementById('cropSelect');
+const thumbsDiv = document.getElementById('cropThumbs');
+
+crops.forEach(c=>{
+  const opt = document.createElement('option');
+  opt.value = c;
+  opt.textContent = c;
+  cropSelect.appendChild(opt);
+
+  // thumbnail element
+  const t = document.createElement('div');
+  t.className = 'thumb';
+  t.title = c;
+  t.dataset.crop = c;
+  const img = document.createElement('img');
+  // images should be uploaded by user in /images/<filename>
+  const fname = cropImageFilenames[c] || 'placeholder.jpg';
+  img.src = `images/${fname}`;
+  img.alt = c;
+  img.onerror = function(){ this.src='images/placeholder.jpg'; } // fallback placeholder
+  t.appendChild(img);
+  t.addEventListener('click', () => {
+    // select crop on thumbnail click
+    cropSelect.value = c;
+    // visually mark selected thumb
+    document.querySelectorAll('.thumb').forEach(x=>x.classList.remove('selected'));
+    t.classList.add('selected');
+    playSound();
+  });
+  thumbsDiv.appendChild(t);
+});
+
+/* ------------------------------
+  Sound effect for interactions
+-------------------------------*/
+const clickSoundURL = 'https://www.soundjay.com/buttons/sounds/button-16.mp3';
+function playSound(){
+  try{
+    const a = new Audio(clickSoundURL);
+    a.volume = 0.35;
+    a.play();
+  }catch(e){}
 }
 
-function renderChart() {
-  const ctx = document.getElementById('myChart').getContext('2d');
-  if(window.myChart) window.myChart.destroy(); // destroy previous chart
-  window.myChart = new Chart(ctx, {
-    type: 'line', // you can change to 'bar' or 'pie'
+/* ------------------------------
+  Chart handling
+-------------------------------*/
+let chartInstance = null;
+function showTrend(){
+  const crop = cropSelect.value;
+  if(!crop){ alert(currentLang==='en' ? 'Please select a crop first!' : 'Tafadhali chagua zao kwanza!'); return; }
+  const type = document.getElementById('chartType').value || 'line';
+  const ctx = document.getElementById('trendChart').getContext('2d');
+
+  const dataObj = cropData[crop];
+  // ensure arrays length = totalMonths
+  const labels = monthlyLabels;
+  const ds1 = dataObj.rainfall.slice(); // rainfall
+  const ds2 = dataObj.temperature.slice(); // temp
+  const ds3 = dataObj.ndvi.slice(); // ndvi
+
+  // If existing chart destroy
+  if(chartInstance) chartInstance.destroy();
+
+  chartInstance = new Chart(ctx, {
+    type: type,
     data: {
-      labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+      labels: labels,
       datasets: [
-        {label:'Rainfall (mm)', data: dataDemo.rainfall, borderColor:'blue', fill:false},
-        {label:'Temperature (°C)', data: dataDemo.temperature, borderColor:'red', fill:false},
-        {label:'NDVI', data: dataDemo.ndvi, borderColor:'green', fill:false}
+        { label: 'Rainfall (mm)', data: ds1, yAxisID: 'y', borderColor:'#2e8b57', backgroundColor:'#a3e4a3', tension:0.25, pointRadius:0, borderWidth:2 },
+        { label: 'Temperature (°C)', data: ds2, yAxisID: 'y1', borderColor:'#ff9933', backgroundColor:'#ffd699', tension:0.25, pointRadius:0, borderWidth:2 },
+        { label: 'NDVI', data: ds3, yAxisID: 'y2', borderColor:'#0066cc', backgroundColor:'#99ccff', tension:0.25, pointRadius:0, borderWidth:2 }
       ]
     },
     options: {
       responsive:true,
-      plugins:{legend:{position:'top'}}
+      interaction:{ mode:'index', intersect:false },
+      stacked:false,
+      scales:{
+        x:{ display:true, ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:20 } },
+        y:{ type:'linear', display:true, position:'left', title:{display:true,text:'Rainfall (mm)'} },
+        y1:{ type:'linear', display:true, position:'right', grid:{ drawOnChartArea:false }, title:{display:true,text:'Temperature (°C)'} },
+        y2:{ type:'linear', display:false, position:'right', suggestedMin:0, suggestedMax:1 }
+      },
+      plugins:{ legend:{ display:true, position:'top' } }
     }
+  });
+
+  // highlight selected thumb
+  document.querySelectorAll('.thumb').forEach(x=>x.classList.remove('selected'));
+  const selThumb = document.querySelector(`.thumb[data-crop="${crop}"]`);
+  if(selThumb) selThumb.classList.add('selected');
+
+  playSound();
+}
+
+/* ------------------------------
+  Advice building + voice (pitch by gender)
+-------------------------------*/
+let currentLang = 'en'; // default
+
+function showAdvice(){
+  const name = (document.getElementById('farmerName').value || (currentLang==='en'? 'Farmer':'Mkulima')).trim();
+  const crop = cropSelect.value;
+  if(!crop){ alert(currentLang==='en' ? 'Please select a crop first!' : 'Tafadhali chagua zao kwanza!'); return; }
+
+  const gender = document.getElementById('gender').value;
+  const icon = gender === 'female' ? '🧕🏾' : (gender === 'male' ? '🧑🏾‍💼' : '👩‍🌾');
+
+  // simple schedule mapping, can be tuned
+  const schedule = {
+    Mahindi:{plant:'March', weed:'May', harvest:'August'},
+    Mpunga:{plant:'May', weed:'July', harvest:'October'},
+    Chai:{plant:'April', weed:'June', harvest:'December'},
+    Kahawa:{plant:'May', weed:'July', harvest:'November'},
+    Maharage:{plant:'March', weed:'April', harvest:'July'},
+    Mtama:{plant:'February', weed:'April', harvest:'June'},
+    Alizeti:{plant:'September', weed:'November', harvest:'February'},
+    Ufuta:{plant:'March', weed:'May', harvest:'August'}
+  };
+
+  const req = cropData[crop].requirements || '';
+  const sched = schedule[crop];
+
+  const adviceEN = `${icon} Hello ${name}!\nCrop: ${crop}\nRequirements: ${req}\nRecommended schedule:\n- Planting: ${sched.plant}\n- Weeding: ${sched.weed}\n- Harvest: ${sched.harvest}\n\nMonitor rainfall and temperature trends shown on the chart for fine adjustments.`;
+  const adviceSW = `${icon} Habari ${name}!\nZao: ${crop}\nMahitaji: ${req}\nRatiba iliyopendekezwa:\n- Kupanda: ${sched.plant}\n- Kupalilia: ${sched.weed}\n- Kuvuna: ${sched.harvest}\n\nFuata mwenendo wa mvua na joto kwenye chati kwa marekebisho.`;
+
+  const adviceText = currentLang==='en' ? adviceEN : adviceSW;
+  document.getElementById('adviceResult').innerText = adviceText;
+
+  // voice: vary pitch by gender, female -> higher pitch, male -> lower
+  const utter = new SpeechSynthesisUtterance(adviceText);
+  utter.lang = currentLang==='en' ? 'en-US' : 'sw-TZ';
+  if(gender==='female') utter.pitch = 1.3;
+  else if(gender==='male') utter.pitch = 0.85;
+  else utter.pitch = 1.0;
+  utter.rate = 1;
+  try{ window.speechSynthesis.cancel(); window.speechSynthesis.speak(utter); }catch(e){}
+  playSound();
+}
+
+/* ------------------------------
+  Language toggle (button under header)
+-------------------------------*/
+const langToggleBtn = document.getElementById('langToggle');
+langToggleBtn.addEventListener('click', toggleLanguage);
+
+function toggleLanguage(){
+  currentLang = currentLang === 'en' ? 'sw' : 'en';
+  playSound();
+  if(currentLang === 'sw'){
+    document.getElementById('siteHeader').innerText = 'Mfumo wa Ushauri wa Kilimo';
+    document.getElementById('lblName').innerText = 'Jina Kamili:';
+    document.getElementById('lblGender').innerText = 'Jinsia:';
+    document.getElementById('lblBirth').innerText = 'Mwaka wa Kuzaliwa:';
+    document.getElementById('lblRegion').innerText = 'Mkoa:';
+    document.getElementById('lblCrop').innerText = 'Zao:';
+    document.getElementById('lblChartType').innerText = 'Aina ya Chati:';
+    langToggleBtn.innerText = '🌐 Badilisha Lugha / Switch Language';
+    // change button labels
+    document.querySelector('button[onclick="showTrend()"]')?.setAttribute('title','Onyesha Mwelekeo');
+  } else {
+    document.getElementById('siteHeader').innerText = 'Agricultural Advisory System';
+    document.getElementById('lblName').innerText = 'Full Name:';
+    document.getElementById('lblGender').innerText = 'Gender:';
+    document.getElementById('lblBirth').innerText = 'Year of Birth:';
+    document.getElementById('lblRegion').innerText = 'Region:';
+    document.getElementById('lblCrop').innerText = 'Crop:';
+    document.getElementById('lblChartType').innerText = 'Chart Type:';
+    langToggleBtn.innerText = '🌐 Switch Language / Badilisha Lugha';
+  }
+}
+
+/* ------------------------------
+  Helper: when select changed, sync thumbnail selection
+-------------------------------*/
+function onCropSelectChange(){
+  playSound();
+  const val = cropSelect.value;
+  document.querySelectorAll('.thumb').forEach(t=>{
+    if(t.dataset.crop === val) t.classList.add('selected'); else t.classList.remove('selected');
   });
 }
 
-function toggleLanguage(){
-  if(lang==='sw'){
-    lang='en';
-    document.getElementById("title").innerText = "Agricultural Advisory System";
-    document.getElementById("lblName").innerText = "Name:";
-    document.getElementById("lblGender").innerText = "Gender:";
-    document.getElementById("lblYear").innerText = "Birth Year:";
-    document.getElementById("lblRegion").innerText = "Select Region:";
-    document.getElementById("lblCrop").innerText = "Select Crop:";
-    document.getElementById("btnAdvice").innerText = "Show Advice";
-  } else {
-    lang='sw';
-    document.getElementById("title").innerText = "Mfumo wa Ushauri wa Kilimo";
-    document.getElementById("lblName").innerText = "Jina:";
-    document.getElementById("lblGender").innerText = "Jinsia:";
-    document.getElementById("lblYear").innerText = "Mwaka wa Kuzaliwa:";
-    document.getElementById("lblRegion").innerText = "Chagua Mkoa:";
-    document.getElementById("lblCrop").innerText = "Chagua Zao:";
-    document.getElementById("btnAdvice").innerText = "Onyesha Ushauri";
-  }
-}
+/* ------------------------------
+  Initialize: nothing else required
+-------------------------------*/
 </script>
-
 </body>
 </html>
